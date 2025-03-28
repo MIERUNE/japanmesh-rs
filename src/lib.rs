@@ -4,4 +4,6 @@ pub mod gridsquare;
 pub enum Error {
     #[error("Invalid code")]
     InvalidCode,
+    #[error("Out of bounds")]
+    OutOfBounds,
 }
