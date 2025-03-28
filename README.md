@@ -15,7 +15,9 @@ Notes:
     - [x] 経緯度からメッシュパッチ
     - [x] メッシュコードからメッシュレベル
     - [x] メッシュコードからメッシュパッチ
-    - BBoxからパッチのイテレータ
+    - [x] BBoxからパッチのイテレータ
+    - examples
+    - More optimizations
     - sub crate for e-Stats (jp-estats-mesh)
     - etc.
 - (国土基本図郭?)

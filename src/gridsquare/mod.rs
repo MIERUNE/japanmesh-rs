@@ -1,7 +1,11 @@
 // JIS X 0410:2002 地域メッシュコード (Grid Square Code)
 
-pub mod code;
-pub mod constants;
-pub mod lnglat;
+mod code;
+mod constants;
+mod iterator;
+mod lnglat;
 
-pub use constants::PRIMARY_MESH_CODES;
+pub use code::*;
+pub use constants::*;
+pub use iterator::*;
+pub use lnglat::*;

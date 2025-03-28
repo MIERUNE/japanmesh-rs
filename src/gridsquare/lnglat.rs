@@ -23,12 +23,12 @@ impl LngLat {
     }
 
     #[inline]
-    pub fn lng(&self) -> f64 {
+    pub const fn lng(&self) -> f64 {
         self.vlng / MULTIPLYER
     }
 
     #[inline]
-    pub fn lat(&self) -> f64 {
+    pub const fn lat(&self) -> f64 {
         self.vlat / MULTIPLYER
     }
 }
@@ -64,6 +64,16 @@ impl LngLatBox {
     }
 
     #[inline]
+    pub fn min(&self) -> LngLat {
+        self.min
+    }
+
+    #[inline]
+    pub fn max(&self) -> LngLat {
+        self.max
+    }
+
+    #[inline]
     pub fn contains_point(&self, lnglat: LngLat) -> bool {
         lnglat.vlng >= self.min.vlng
             && lnglat.vlat >= self.min.vlat
@@ -77,6 +87,14 @@ impl LngLatBox {
             && self.min.vlng <= target.min.vlng
             && self.max.vlat >= target.max.vlat
             && self.min.vlat <= target.min.vlat
+    }
+
+    #[inline]
+    pub fn intersects_box(&self, target: &LngLatBox) -> bool {
+        self.min.vlng <= target.max.vlng
+            && self.max.vlng >= target.min.vlng
+            && self.min.vlat <= target.max.vlat
+            && self.max.vlat >= target.min.vlat
     }
 
     /// Divides this box into an N×N grid and returns the sub-box at position (x, y)

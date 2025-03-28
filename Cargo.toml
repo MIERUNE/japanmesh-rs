@@ -6,3 +6,8 @@ edition = "2024"
 [dependencies]
 thiserror = "2.0.12"
 
+[dev-dependencies]
+flatgeobuf = { version = "4.6.0", default-features = false }
+geo = { version = "0.30.0", default-features = false }
+geozero = { version = "0.14.0" }
+
