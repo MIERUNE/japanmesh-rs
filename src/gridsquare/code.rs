@@ -29,6 +29,18 @@ use std::{fmt::Display, str::FromStr};
 //     Eighth,
 // }
 
+// #[derive(Debug, PartialEq, Eq)]
+// pub enum Level {
+//     Primary,
+//     Secondary,
+//     // X5,
+//     // X2,
+//     Standard,
+//     Half,
+//     Quarter,
+//     Eighth,
+// }
+
 #[derive(Debug)]
 pub enum LevelAndCode {
     Primary(PrimaryCode),
@@ -79,7 +91,7 @@ impl FromStr for LevelAndCode {
 
 pub trait GridSquareCode {
     /// Returns the bounding box of the code
-    fn patch(&self) -> LngLatBox;
+    fn envelope(&self) -> LngLatBox;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -125,10 +137,10 @@ impl PrimaryCode {
         self.x
     }
 
-    pub fn iter_secondary(&self) -> impl Iterator<Item = SecondaryCode> {
+    pub fn iter_secondary(self) -> impl Iterator<Item = SecondaryCode> {
         (0..=7).flat_map(move |x2| {
             (0..=7).map(move |y2| SecondaryCode {
-                primary: *self,
+                primary: self,
                 y2,
                 x2,
             })
@@ -137,7 +149,7 @@ impl PrimaryCode {
 }
 
 impl GridSquareCode for PrimaryCode {
-    fn patch(&self) -> LngLatBox {
+    fn envelope(&self) -> LngLatBox {
         LngLatBox::new(
             LngLat::new_raw(
                 ((self.x1() as u32 + 100) * 30) as f64,
@@ -237,10 +249,10 @@ impl SecondaryCode {
         self.primary
     }
 
-    pub fn iter_standard(&self) -> impl Iterator<Item = StandardCode> {
+    pub fn iter_standard(self) -> impl Iterator<Item = StandardCode> {
         (0..=9).flat_map(move |x3| {
             (0..=9).map(move |y3| StandardCode {
-                secondary: *self,
+                secondary: self,
                 y3,
                 x3,
             })
@@ -249,7 +261,7 @@ impl SecondaryCode {
 }
 
 impl GridSquareCode for SecondaryCode {
-    fn patch(&self) -> LngLatBox {
+    fn envelope(&self) -> LngLatBox {
         LngLatBox::new(
             LngLat::new_raw(
                 ((self.x1() as u32 + 100) * 30) as f64 + self.x2() as f64 * 3.75,
@@ -371,16 +383,13 @@ impl StandardCode {
         self.secondary
     }
 
-    pub fn iter_half(&self) -> impl Iterator<Item = HalfCode> {
-        (1..=4).map(move |quad| HalfCode {
-            parent: *self,
-            quad,
-        })
+    pub fn iter_half(self) -> impl Iterator<Item = HalfCode> {
+        (1..=4).map(move |quad| HalfCode { parent: self, quad })
     }
 }
 
 impl GridSquareCode for StandardCode {
-    fn patch(&self) -> LngLatBox {
+    fn envelope(&self) -> LngLatBox {
         LngLatBox::new(
             LngLat::new_raw(
                 ((self.x1() as u32 + 100) * 30) as f64
@@ -451,19 +460,16 @@ impl<P: GridSquareCode + Copy> Quad<P> {
         Self { parent, quad }
     }
 
-    pub fn iter_quad(&self) -> impl Iterator<Item = Quad<Self>> {
-        (1..=4).map(move |quad| Quad::<Self> {
-            parent: *self,
-            quad,
-        })
+    pub fn iter_quad(self) -> impl Iterator<Item = Quad<Self>> {
+        (1..=4).map(move |quad| Quad::<Self> { parent: self, quad })
     }
 }
 
 impl<P: GridSquareCode> GridSquareCode for Quad<P> {
-    fn patch(&self) -> LngLatBox {
-        let patch = self.parent.patch();
+    fn envelope(&self) -> LngLatBox {
+        let envelope = self.parent.envelope();
         let d = self.quad - 1;
-        patch.split::<2>(d & 1, d >> 1)
+        envelope.split::<2>(d & 1, d >> 1)
     }
 }
 
@@ -755,7 +761,7 @@ mod tests {
 
         let code = PrimaryCode::from_int(6441).unwrap();
         assert_eq!(
-            code.patch(),
+            code.envelope(),
             LngLatBox::new(
                 LngLat::new_raw(30. * 141.0, 20. * 64.),
                 LngLat::new_raw(30. * 142.0, 20. * 65.)
@@ -768,9 +774,9 @@ mod tests {
         let code = PrimaryCode::from_lnglat(LngLat::new(142.01, 43.34)).unwrap();
         assert_eq!(code.to_string(), "6542");
 
-        let patch = code.patch();
+        let envelope = code.envelope();
         for child in code.iter_secondary() {
-            patch.contains_box(&child.patch());
+            envelope.contains_box(&child.envelope());
         }
     }
 
@@ -800,7 +806,7 @@ mod tests {
 
         let code = SecondaryCode::from_int(644142).unwrap();
         assert_eq!(
-            code.patch(),
+            code.envelope(),
             LngLatBox::new(
                 LngLat::new_raw(30. * (141.0 + 2. / 8.), 20. * (64. + 4. / 8.)),
                 LngLat::new_raw(30. * (141.0 + 3. / 8.), 20. * (64. + 5. / 8.))
@@ -813,9 +819,9 @@ mod tests {
         let code = SecondaryCode::from_lnglat(LngLat::new(141.88596, 43.25935)).unwrap();
         assert_eq!(code.to_string(), "644177");
 
-        let patch = code.patch();
+        let envelope = code.envelope();
         for child in code.iter_standard() {
-            patch.contains_box(&child.patch());
+            envelope.contains_box(&child.envelope());
         }
     }
 
@@ -854,7 +860,7 @@ mod tests {
 
         let code = StandardCode::from_int(64414278).unwrap();
         assert_eq!(
-            code.patch(),
+            code.envelope(),
             LngLatBox::new(
                 LngLat::new_raw(
                     30. * 141.0 + 30. * (2. + 8. / 10.) / 8.,
@@ -870,9 +876,9 @@ mod tests {
         let code = StandardCode::from_lnglat(LngLat::new(141.861882, 43.249259)).unwrap();
         assert_eq!(code.to_string(), "64416698");
 
-        let patch = code.patch();
+        let envelope = code.envelope();
         for child in code.iter_half() {
-            patch.contains_box(&child.patch());
+            envelope.contains_box(&child.envelope());
         }
     }
 
@@ -903,7 +909,7 @@ mod tests {
 
         let code = HalfCode::from_int(644142782).unwrap();
         assert_eq!(
-            code.patch(),
+            code.envelope(),
             LngLatBox::new(
                 LngLat::new_raw(
                     30. * 141.0 + 30. * (2. + (8. + 0.5) / 10.) / 8.,
@@ -919,9 +925,9 @@ mod tests {
         let code = HalfCode::from_lnglat(LngLat::new(141.8686782, 43.2405564)).unwrap();
         assert_eq!(code.to_string(), "644166893");
 
-        let patch = code.patch();
+        let envelope = code.envelope();
         for child in code.iter_quad() {
-            patch.contains_box(&child.patch());
+            envelope.contains_box(&child.envelope());
         }
     }
 
@@ -954,7 +960,7 @@ mod tests {
 
         let code = QuarterCode::from_int(6441427823).unwrap();
         assert_eq!(
-            code.patch(),
+            code.envelope(),
             LngLatBox::new(
                 LngLat::new_raw(
                     30. * 141.0 + 30. * (2. + (8. + 0.5) / 10.) / 8.,
@@ -970,9 +976,9 @@ mod tests {
         let code = QuarterCode::from_lnglat(LngLat::new(141.8686782, 43.2405564)).unwrap();
         assert_eq!(code.to_string(), "6441668934");
 
-        let patch = code.patch();
+        let envelope = code.envelope();
         for child in code.iter_quad() {
-            patch.contains_box(&child.patch());
+            envelope.contains_box(&child.envelope());
         }
     }
 
@@ -1007,7 +1013,7 @@ mod tests {
 
         let code = EighthCode::from_int(64414278234).unwrap();
         assert_eq!(
-            code.patch(),
+            code.envelope(),
             LngLatBox::new(
                 LngLat::new_raw(
                     30. * 141.0 + 30. * (2. + (8. + 0.5 + 0.125) / 10.) / 8.,

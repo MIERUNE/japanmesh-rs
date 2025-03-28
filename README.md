@@ -16,6 +16,7 @@ Notes:
     - [x] メッシュコードからメッシュレベル
     - [x] メッシュコードからメッシュパッチ
     - BBoxからパッチのイテレータ
+    - examples
     - sub crate for e-Stats (jp-estats-mesh)
     - etc.
 - (国土基本図郭?)

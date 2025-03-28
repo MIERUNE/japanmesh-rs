@@ -79,6 +79,14 @@ impl LngLatBox {
             && self.min.vlat <= target.min.vlat
     }
 
+    #[inline]
+    pub fn intersects_box(&self, target: &LngLatBox) -> bool {
+        self.min.vlng <= target.max.vlng
+            && self.max.vlng >= target.min.vlng
+            && self.min.vlat <= target.max.vlat
+            && self.max.vlat >= target.min.vlat
+    }
+
     /// Divides this box into an N×N grid and returns the sub-box at position (x, y)
     pub fn split<const N: u8>(&self, x: u8, y: u8) -> Self {
         let dlng = (self.max.vlng - self.min.vlng) / N as f64;
