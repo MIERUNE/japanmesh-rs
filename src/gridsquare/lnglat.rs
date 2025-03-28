@@ -72,11 +72,11 @@ impl LngLatBox {
     }
 
     #[inline]
-    pub fn contains_box(&self, box2: &LngLatBox) -> bool {
-        self.min.vlng <= box2.max.vlng
-            && self.max.vlng >= box2.min.vlng
-            && self.min.vlat <= box2.max.vlat
-            && self.max.vlat >= box2.min.vlat
+    pub fn contains_box(&self, target: &LngLatBox) -> bool {
+        self.max.vlng >= target.max.vlng
+            && self.min.vlng <= target.min.vlng
+            && self.max.vlat >= target.max.vlat
+            && self.min.vlat <= target.min.vlat
     }
 
     /// Divides this box into an N×N grid and returns the sub-box at position (x, y)
@@ -93,5 +93,61 @@ impl LngLatBox {
                 self.min.vlat + dlat * (y + 1) as f64,
             ),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_lnglat() {
+        let lnglat = LngLat::new(139.25, 35.5);
+        assert_eq!(lnglat.lng(), 139.25);
+        assert_eq!(lnglat.lat(), 35.5);
+        assert_eq!(lnglat.to_string(), "LngLat(139.25, 35.5)");
+    }
+
+    #[test]
+    fn test_lnglat_box_swap() {
+        let box1 = LngLatBox::new(LngLat::new(139.30, 35.5), LngLat::new(139.25, 35.6));
+        assert_eq!(box1.min, LngLat::new(139.25, 35.5));
+        assert_eq!(box1.max, LngLat::new(139.30, 35.6));
+
+        let box2 = LngLatBox::new(LngLat::new(139.25, 35.6), LngLat::new(139.30, 35.5));
+        assert_eq!(box2.min, LngLat::new(139.25, 35.5));
+        assert_eq!(box2.max, LngLat::new(139.30, 35.6));
+    }
+
+    #[test]
+    fn test_lnglat_box_contains() {
+        let box1 = LngLatBox::new(LngLat::new(139.25, 35.5), LngLat::new(139.30, 35.6));
+        assert!(box1.contains_point(LngLat::new(139.27, 35.55)));
+        assert!(!box1.contains_point(LngLat::new(139.27, 35.65)));
+        assert!(!box1.contains_point(LngLat::new(139.27, 35.45)));
+        assert!(!box1.contains_point(LngLat::new(139.22, 35.55)));
+        assert!(!box1.contains_point(LngLat::new(139.22, 35.55)));
+
+        assert!(box1.contains_box(&box1));
+        assert!(box1.contains_box(&LngLatBox::new(
+            LngLat::new(139.25, 35.5),
+            LngLat::new(139.30, 35.6)
+        )));
+        assert!(!box1.contains_box(&LngLatBox::new(
+            LngLat::new(139.25, 35.5),
+            LngLat::new(139.30, 35.7)
+        )));
+        assert!(!box1.contains_box(&LngLatBox::new(
+            LngLat::new(139.25, 35.4),
+            LngLat::new(139.30, 35.6)
+        )));
+        assert!(!box1.contains_box(&LngLatBox::new(
+            LngLat::new(139.24, 35.5),
+            LngLat::new(139.30, 35.6)
+        )));
+        assert!(!box1.contains_box(&LngLatBox::new(
+            LngLat::new(139.25, 35.4),
+            LngLat::new(139.30, 35.6)
+        )));
     }
 }

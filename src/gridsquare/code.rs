@@ -371,7 +371,7 @@ impl StandardCode {
         self.secondary
     }
 
-    pub fn iter_half(&self) -> impl Iterator<Item = Quad<Self>> {
+    pub fn iter_half(&self) -> impl Iterator<Item = HalfCode> {
         (1..=4).map(move |quad| HalfCode {
             parent: *self,
             quad,
@@ -526,6 +526,10 @@ impl HalfCode {
     pub fn quad1(&self) -> u8 {
         self.quad
     }
+
+    pub fn standard(&self) -> StandardCode {
+        self.parent
+    }
 }
 
 impl FromStr for HalfCode {
@@ -600,6 +604,14 @@ impl QuarterCode {
 
     pub fn quad2(&self) -> u8 {
         self.quad
+    }
+
+    pub fn standard(&self) -> StandardCode {
+        self.parent.parent
+    }
+
+    pub fn half(&self) -> HalfCode {
+        self.parent
     }
 }
 
@@ -680,6 +692,18 @@ impl EighthCode {
     pub fn quad3(&self) -> u8 {
         self.quad
     }
+
+    pub fn standard(&self) -> StandardCode {
+        self.parent.parent.parent
+    }
+
+    pub fn half(&self) -> HalfCode {
+        self.parent.parent
+    }
+
+    pub fn quarter(&self) -> QuarterCode {
+        self.parent
+    }
 }
 
 impl FromStr for EighthCode {
@@ -743,6 +767,11 @@ mod tests {
 
         let code = PrimaryCode::from_lnglat(LngLat::new(142.01, 43.34)).unwrap();
         assert_eq!(code.to_string(), "6542");
+
+        let patch = code.patch();
+        for child in code.iter_secondary() {
+            patch.contains_box(&child.patch());
+        }
     }
 
     #[test]
@@ -783,6 +812,11 @@ mod tests {
 
         let code = SecondaryCode::from_lnglat(LngLat::new(141.88596, 43.25935)).unwrap();
         assert_eq!(code.to_string(), "644177");
+
+        let patch = code.patch();
+        for child in code.iter_standard() {
+            patch.contains_box(&child.patch());
+        }
     }
 
     #[test]
@@ -835,6 +869,11 @@ mod tests {
 
         let code = StandardCode::from_lnglat(LngLat::new(141.861882, 43.249259)).unwrap();
         assert_eq!(code.to_string(), "64416698");
+
+        let patch = code.patch();
+        for child in code.iter_half() {
+            patch.contains_box(&child.patch());
+        }
     }
 
     #[test]
@@ -857,6 +896,7 @@ mod tests {
         assert_eq!(code.x3(), 8);
         assert_eq!(code.quad1(), 1);
         assert_eq!(code.to_string(), "123456781");
+        assert_eq!(code.standard(), StandardCode::from_int(12345678).unwrap());
 
         let code2 = HalfCode::from_str("123456781").unwrap();
         assert_eq!(code, code2);
@@ -878,6 +918,11 @@ mod tests {
 
         let code = HalfCode::from_lnglat(LngLat::new(141.8686782, 43.2405564)).unwrap();
         assert_eq!(code.to_string(), "644166893");
+
+        let patch = code.patch();
+        for child in code.iter_quad() {
+            patch.contains_box(&child.patch());
+        }
     }
 
     #[test]
@@ -901,6 +946,8 @@ mod tests {
         assert_eq!(code.quad1(), 1);
         assert_eq!(code.quad2(), 2);
         assert_eq!(code.to_string(), "1234567812");
+        assert_eq!(code.standard(), StandardCode::from_int(12345678).unwrap());
+        assert_eq!(code.half(), HalfCode::from_int(123456781).unwrap());
 
         let code2 = QuarterCode::from_str("1234567812").unwrap();
         assert_eq!(code, code2);
@@ -922,6 +969,11 @@ mod tests {
 
         let code = QuarterCode::from_lnglat(LngLat::new(141.8686782, 43.2405564)).unwrap();
         assert_eq!(code.to_string(), "6441668934");
+
+        let patch = code.patch();
+        for child in code.iter_quad() {
+            patch.contains_box(&child.patch());
+        }
     }
 
     #[test]
@@ -946,6 +998,9 @@ mod tests {
         assert_eq!(code.quad2(), 2);
         assert_eq!(code.quad3(), 3);
         assert_eq!(code.to_string(), "12345678123");
+        assert_eq!(code.standard(), StandardCode::from_int(12345678).unwrap());
+        assert_eq!(code.half(), HalfCode::from_int(123456781).unwrap());
+        assert_eq!(code.quarter(), QuarterCode::from_int(1234567812).unwrap());
 
         let code2 = EighthCode::from_str("12345678123").unwrap();
         assert_eq!(code, code2);
@@ -967,5 +1022,8 @@ mod tests {
 
         let code = EighthCode::from_lnglat(LngLat::new(141.8686372, 43.2404931)).unwrap();
         assert_eq!(code.to_string(), "64416689342");
+        assert_eq!(code.standard(), StandardCode::from_int(64416689).unwrap());
+        assert_eq!(code.half(), HalfCode::from_int(644166893).unwrap());
+        assert_eq!(code.quarter(), QuarterCode::from_int(6441668934).unwrap());
     }
 }
