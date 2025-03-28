@@ -4,8 +4,8 @@ pub(crate) const MULTIPLYER: f64 = 30.0;
 
 #[derive(Clone, Copy, PartialEq)]
 pub struct LngLat {
-    vlng: f64,
-    vlat: f64,
+    pub(crate) vlng: f64,
+    pub(crate) vlat: f64,
 }
 
 impl LngLat {
@@ -79,8 +79,8 @@ impl LngLatBox {
             && self.max.vlat >= box2.min.vlat
     }
 
+    /// Divides this box into an N×N grid and returns the sub-box at position (x, y)
     pub fn split<const N: u8>(&self, x: u8, y: u8) -> Self {
-        // ...
         let dlng = (self.max.vlng - self.min.vlng) / N as f64;
         let dlat = (self.max.vlat - self.min.vlat) / N as f64;
         Self {

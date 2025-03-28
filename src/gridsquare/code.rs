@@ -103,6 +103,19 @@ impl PrimaryCode {
     }
 
     #[inline]
+    pub fn from_lnglat(lnglat: LngLat) -> Result<Self, Error> {
+        let y = (lnglat.vlat / 20.) % 100.0;
+        let x = lnglat.lng() % 100.0;
+        if y >= 100.0 || x >= 100.0 || y < 0.0 || x < 0.0 {
+            return Err(Error::OutOfBounds);
+        }
+        Ok(Self {
+            y: y as u8,
+            x: x as u8,
+        })
+    }
+
+    #[inline]
     pub fn y1(&self) -> u8 {
         self.y
     }
@@ -185,6 +198,17 @@ impl SecondaryCode {
             primary: PrimaryCode::from_int((code / 100) as u16)?,
             y2,
             x2,
+        })
+    }
+
+    #[inline]
+    pub fn from_lnglat(lnglat: LngLat) -> Result<Self, Error> {
+        let yd = (lnglat.vlat / 20. * 8.) as u32 % 8;
+        let xd = (lnglat.vlng / 30. * 8.) as u32 % 8;
+        Ok(Self {
+            primary: PrimaryCode::from_lnglat(lnglat)?,
+            y2: yd as u8,
+            x2: xd as u8,
         })
     }
 
@@ -294,6 +318,17 @@ impl StandardCode {
         let y3 = ((code % 100) / 10) as u8;
         let x3 = (code % 10) as u8;
         Ok(Self { secondary, y3, x3 })
+    }
+
+    #[inline]
+    pub fn from_lnglat(lnglat: LngLat) -> Result<Self, Error> {
+        let yd = (lnglat.vlat / 20. * 8. * 10.) as u32 % 10;
+        let xd = (lnglat.vlng / 30. * 8. * 10.) as u32 % 10;
+        Ok(Self {
+            secondary: SecondaryCode::from_lnglat(lnglat)?,
+            y3: yd as u8,
+            x3: xd as u8,
+        })
     }
 
     #[inline]
@@ -453,6 +488,17 @@ impl HalfCode {
         Ok(Self { parent, quad })
     }
 
+    #[inline]
+    pub fn from_lnglat(lnglat: LngLat) -> Result<Self, Error> {
+        let yd = ((lnglat.vlat / 20. * 8. * 10. * 2.) as u64 % 2) as u8;
+        let xd = ((lnglat.vlng / 30. * 8. * 10. * 2.) as u64 % 2) as u8;
+        let quad = (yd << 1) + xd + 1;
+        Ok(Self {
+            parent: StandardCode::from_lnglat(lnglat)?,
+            quad,
+        })
+    }
+
     pub fn y1(&self) -> u8 {
         self.parent.y1()
     }
@@ -511,6 +557,17 @@ impl QuarterCode {
             return Err(Error::InvalidCode);
         }
         Ok(Self { parent, quad })
+    }
+
+    #[inline]
+    pub fn from_lnglat(lnglat: LngLat) -> Result<Self, Error> {
+        let yd = ((lnglat.vlat / 20. * 8. * 10. * 4.) as u64 % 2) as u8;
+        let xd = ((lnglat.vlng / 30. * 8. * 10. * 4.) as u64 % 2) as u8;
+        let quad = (yd << 1) + xd + 1;
+        Ok(Self {
+            parent: HalfCode::from_lnglat(lnglat)?,
+            quad,
+        })
     }
 
     pub fn y1(&self) -> u8 {
@@ -575,6 +632,17 @@ impl EighthCode {
             return Err(Error::InvalidCode);
         }
         Ok(Self { parent, quad })
+    }
+
+    #[inline]
+    pub fn from_lnglat(lnglat: LngLat) -> Result<Self, Error> {
+        let yd = ((lnglat.vlat / 20. * 8. * 10. * 8.) as u64 % 2) as u8;
+        let xd = ((lnglat.vlng / 30. * 8. * 10. * 8.) as u64 % 2) as u8;
+        let quad = (yd << 1) + xd + 1;
+        Ok(Self {
+            parent: QuarterCode::from_lnglat(lnglat)?,
+            quad,
+        })
     }
 
     pub fn y1(&self) -> u8 {
@@ -669,6 +737,12 @@ mod tests {
                 LngLat::new_raw(30. * 142.0, 20. * 65.)
             )
         );
+
+        let code = PrimaryCode::from_lnglat(LngLat::new(141.99, 43.33)).unwrap();
+        assert_eq!(code.to_string(), "6441");
+
+        let code = PrimaryCode::from_lnglat(LngLat::new(142.01, 43.34)).unwrap();
+        assert_eq!(code.to_string(), "6542");
     }
 
     #[test]
@@ -703,6 +777,12 @@ mod tests {
                 LngLat::new_raw(30. * (141.0 + 3. / 8.), 20. * (64. + 5. / 8.))
             )
         );
+
+        let code = SecondaryCode::from_lnglat(LngLat::new(141.87132, 43.24550)).unwrap();
+        assert_eq!(code.to_string(), "644166");
+
+        let code = SecondaryCode::from_lnglat(LngLat::new(141.88596, 43.25935)).unwrap();
+        assert_eq!(code.to_string(), "644177");
     }
 
     #[test]
@@ -752,6 +832,9 @@ mod tests {
                 ),
             )
         );
+
+        let code = StandardCode::from_lnglat(LngLat::new(141.861882, 43.249259)).unwrap();
+        assert_eq!(code.to_string(), "64416698");
     }
 
     #[test]
@@ -792,6 +875,9 @@ mod tests {
                 ),
             )
         );
+
+        let code = HalfCode::from_lnglat(LngLat::new(141.8686782, 43.2405564)).unwrap();
+        assert_eq!(code.to_string(), "644166893");
     }
 
     #[test]
@@ -833,6 +919,9 @@ mod tests {
                 ),
             )
         );
+
+        let code = QuarterCode::from_lnglat(LngLat::new(141.8686782, 43.2405564)).unwrap();
+        assert_eq!(code.to_string(), "6441668934");
     }
 
     #[test]
@@ -875,5 +964,8 @@ mod tests {
                 ),
             )
         );
+
+        let code = EighthCode::from_lnglat(LngLat::new(141.8686372, 43.2404931)).unwrap();
+        assert_eq!(code.to_string(), "64416689342");
     }
 }
