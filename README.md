@@ -18,6 +18,7 @@ Notes:
     - [x] BBoxからパッチのイテレータ
     - examples
     - More optimizations
+    - x5 mesh, x2 mesh
     - sub crate for e-Stats (jp-estats-mesh)
     - etc.
 - (国土基本図郭?)

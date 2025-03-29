@@ -1,7 +1,8 @@
 use flatgeobuf::geozero::PropertyProcessor;
 use flatgeobuf::{ColumnType, GeometryType};
 use geozero::ColumnValue;
-use japanmesh::gridsquare::{LngLat, LngLatBox, iter_standard_patches_with_boundary};
+
+use japanmesh::gridsquare::{LngLatBox, primaries_in_land, standard_patches};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut fgb = flatgeobuf::FgbWriter::create_with_options(
@@ -17,9 +18,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
     )?;
     fgb.add_column("code", ColumnType::String, |_fbb, _col| {});
-    let boundary = LngLatBox::new(LngLat::new(100.0, 0.0), LngLat::new(180.0, 90.0));
-    let iter = iter_standard_patches_with_boundary(boundary);
 
+    // let boundary = LngLatBox::new(LngLat::new(100.0, 0.0), LngLat::new(180.0, 90.0));
+    let iter = standard_patches(primaries_in_land(), None);
     add_geometries(&mut fgb, iter)?;
 
     // Write .fgb file

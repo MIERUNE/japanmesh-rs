@@ -1,4 +1,6 @@
 // Special LngLat utility to avoid floating point errors
+//
+// Internal (lng, lat) values are multiplied by 30.0 to avoid floating point errors
 
 pub(crate) const MULTIPLYER: f64 = 30.0;
 
@@ -127,11 +129,16 @@ mod tests {
     }
 
     #[test]
-    fn test_lnglat_box_swap() {
+    fn test_lnglat_box() {
+        // normal
+        let box1 = LngLatBox::new(LngLat::new(139.25, 35.5), LngLat::new(139.30, 35.6));
+        assert_eq!(box1.min(), LngLat::new(139.25, 35.5));
+        assert_eq!(box1.max(), LngLat::new(139.30, 35.6));
+        // swap
         let box1 = LngLatBox::new(LngLat::new(139.30, 35.5), LngLat::new(139.25, 35.6));
         assert_eq!(box1.min, LngLat::new(139.25, 35.5));
         assert_eq!(box1.max, LngLat::new(139.30, 35.6));
-
+        // swap
         let box2 = LngLatBox::new(LngLat::new(139.25, 35.6), LngLat::new(139.30, 35.5));
         assert_eq!(box2.min, LngLat::new(139.25, 35.5));
         assert_eq!(box2.max, LngLat::new(139.30, 35.6));

@@ -1,6 +1,6 @@
 use super::PrimaryCode;
 
-pub static PRIMARIES_IN_LAND: [PrimaryCode; 176] = [
+pub(crate) static PRIMARIES_IN_LAND: [PrimaryCode; 176] = [
     PrimaryCode { y: 30, x: 36 },
     PrimaryCode { y: 36, x: 22 },
     PrimaryCode { y: 36, x: 23 },
