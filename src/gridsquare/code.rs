@@ -105,7 +105,7 @@ impl PrimaryCode {
     }
 
     #[inline]
-    pub const fn from_yx(y: u8, x: u8) -> Result<Self, Error> {
+    pub const fn from_yx_raw(y: u8, x: u8) -> Result<Self, Error> {
         if y > 99 || x > 99 {
             return Err(Error::InvalidCode);
         }

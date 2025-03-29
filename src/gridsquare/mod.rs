@@ -6,6 +6,5 @@ mod iterator;
 mod lnglat;
 
 pub use code::*;
-pub use constants::*;
 pub use iterator::*;
 pub use lnglat::*;
