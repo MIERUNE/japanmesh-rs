@@ -2,6 +2,10 @@
 name = "japanmesh"
 version = "0.1.0"
 edition = "2024"
+repository = "https://github.com/MIERUNE/japanmesh-rs"
+authors = ["Taku Fukada <naninunenor@gmail.com>", "MIERUNE Inc. <info@mierune.co.jp>"]
+license = "MIT"
+description = "Utilities for Japanese Grid Square Code (JIS X 0410:2002 地域メッシュコード)"
 
 [dependencies]
 thiserror = "2.0.12"
