@@ -1,7 +1,7 @@
 use clap::Parser;
 use flatgeobuf::GeometryType;
 use geozero::{ColumnValue, FeatureProcessor, GeozeroGeometry};
-use std::path::PathBuf;
+use std::{io::BufWriter, path::PathBuf};
 
 use japanmesh::gridsquare::{LngLatBox, primaries_in_land, standard_patches};
 
@@ -38,12 +38,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         add_geometries(&mut fgb, iter)?;
         eprintln!("Writing Flatgeobuf file to {}...", output_path);
         let file = std::fs::File::create(&output_path)?;
-        fgb.write(file)?;
+        fgb.write(BufWriter::new(file))?;
     } else if output_path.ends_with(".geojson.gz") {
         // GeoJSON output
         eprintln!("Writing GeoJSON file to {}...", output_path);
         let file = std::fs::File::create(&output_path)?;
-        let gz_writer = flate2::write::GzEncoder::new(file, flate2::Compression::default());
+        let gz_writer =
+            flate2::write::GzEncoder::new(BufWriter::new(file), flate2::Compression::default());
         let mut processor = geozero::geojson::GeoJsonWriter::new(gz_writer);
         add_geometries(&mut processor, iter)?;
     } else {
