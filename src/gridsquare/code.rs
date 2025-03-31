@@ -189,7 +189,7 @@ impl SecondaryCode {
         }
         let y2 = ((code % 100) / 10) as u8;
         let x2 = (code % 10) as u8;
-        if y2 >= 7 || x2 >= 7 {
+        if y2 > 7 || x2 > 7 {
             return Err(Error::InvalidCode);
         }
         Ok(Self {
