@@ -76,6 +76,20 @@ impl LngLatBox {
     }
 
     #[inline]
+    pub fn union(self, other: &Self) -> Self {
+        LngLatBox {
+            min: LngLat::new_raw(
+                self.min.vlng.min(other.min.vlng),
+                self.min.vlat.min(other.min.vlat),
+            ),
+            max: LngLat::new_raw(
+                self.max.vlng.max(other.max.vlng),
+                self.max.vlat.max(other.max.vlat),
+            ),
+        }
+    }
+
+    #[inline]
     pub fn contains_point(&self, lnglat: LngLat) -> bool {
         lnglat.vlng >= self.min.vlng
             && lnglat.vlat >= self.min.vlat

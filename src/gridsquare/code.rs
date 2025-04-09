@@ -69,6 +69,8 @@ impl FromStr for LevelAndCode {
 pub trait GridSquareCode {
     /// Returns the bounding box of the code
     fn envelope(&self) -> LngLatBox;
+
+    fn index_xy(&self) -> (u32, u32);
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -146,6 +148,11 @@ impl GridSquareCode for PrimaryCode {
                 ((self.y1() as u32 + 1) * 20) as f64,
             ),
         )
+    }
+
+    #[inline]
+    fn index_xy(&self) -> (u32, u32) {
+        (self.x as u32, self.y as u32)
     }
 }
 
@@ -259,6 +266,12 @@ impl GridSquareCode for SecondaryCode {
             ),
         )
     }
+
+    #[inline]
+    fn index_xy(&self) -> (u32, u32) {
+        let (px, py) = self.primary.index_xy();
+        (px * 8 + self.x2 as u32, py * 8 + self.y2 as u32)
+    }
 }
 
 impl FromStr for SecondaryCode {
@@ -276,7 +289,7 @@ impl FromStr for SecondaryCode {
         };
         let y2 = y2_str.parse::<u8>().map_err(|_| Error::InvalidCode)?;
         let x2 = x2_str.parse::<u8>().map_err(|_| Error::InvalidCode)?;
-        if y2 >= 7 || x2 >= 7 {
+        if y2 > 7 || x2 > 7 {
             return Err(Error::InvalidCode);
         }
         Ok(Self {
@@ -393,6 +406,12 @@ impl GridSquareCode for StandardCode {
             ),
         )
     }
+
+    #[inline]
+    fn index_xy(&self) -> (u32, u32) {
+        let (px, py) = self.secondary.index_xy();
+        (px * 10 + self.x3 as u32, py * 10 + self.y3 as u32)
+    }
 }
 
 impl FromStr for StandardCode {
@@ -456,6 +475,14 @@ impl<P: GridSquareCode> GridSquareCode for Quad<P> {
         let envelope = self.parent.envelope();
         let d = self.quad - 1;
         envelope.split::<2>(d & 1, d >> 1)
+    }
+
+    #[inline]
+    fn index_xy(&self) -> (u32, u32) {
+        let (px, py) = self.parent.index_xy();
+        let x = (self.quad - 1) & 1;
+        let y = (self.quad - 1) >> 1;
+        (px * 2 + x as u32, py * 2 + y as u32)
     }
 }
 
@@ -764,6 +791,9 @@ mod tests {
         for child in code.iter_secondary() {
             envelope.contains_box(&child.envelope());
         }
+
+        let code = PrimaryCode::from_str("0102").unwrap();
+        assert_eq!(code.index_xy(), (2, 1));
     }
 
     #[test]
@@ -809,6 +839,9 @@ mod tests {
         for child in code.iter_standard() {
             envelope.contains_box(&child.envelope());
         }
+
+        let code = SecondaryCode::from_str("010276").unwrap();
+        assert_eq!(code.index_xy(), (16 + 6, 8 + 7));
     }
 
     #[test]
@@ -866,6 +899,9 @@ mod tests {
         for child in code.iter_half() {
             envelope.contains_box(&child.envelope());
         }
+
+        let code = StandardCode::from_str("01027654").unwrap();
+        assert_eq!(code.index_xy(), (22 * 10 + 4, 15 * 10 + 5));
     }
 
     #[test]
@@ -915,6 +951,11 @@ mod tests {
         for child in code.iter_quad() {
             envelope.contains_box(&child.envelope());
         }
+
+        let code = HalfCode::from_str("010276542").unwrap();
+        assert_eq!(code.index_xy(), ((22 * 10 + 4) * 2 + 1, (15 * 10 + 5) * 2));
+        let code = HalfCode::from_str("010276543").unwrap();
+        assert_eq!(code.index_xy(), ((22 * 10 + 4) * 2, (15 * 10 + 5) * 2 + 1));
     }
 
     #[test]
@@ -966,6 +1007,12 @@ mod tests {
         for child in code.iter_quad() {
             envelope.contains_box(&child.envelope());
         }
+
+        let code = QuarterCode::from_str("0102765423").unwrap();
+        assert_eq!(
+            code.index_xy(),
+            (((22 * 10 + 4) * 2 + 1) * 2, ((15 * 10 + 5) * 2) * 2 + 1)
+        );
     }
 
     #[test]
